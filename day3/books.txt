@@ -1,0 +1,10 @@
+101:B001:Java Basics:Raj:500
+102:B002:C++ Fundamentals:Ekta:450
+103:B003:Python Essentials:Amit:600
+104:B004:Data Structures:Riya:700
+105:B005:Algorithms in Java:Sara:650
+106:B006:Web Development:Neha:550
+107:B007:Database Systems:Vikram:800
+108:B008:Operating Systems:Ankit:750
+109:B009:Networking Concepts:Priya:620
+110:B010:Software Engineering:Karan:680
