@@ -6,8 +6,7 @@ import jakarta.persistence.EntityManager;
 import model.Book;
 import util.JPAUtil;
 
-public class BookDaoJpaImpl implements BookDao {
-
+public class BookDaoImpl implements BookDao{
 	@Override
 	public List<Book> getAllBooks() {
 		try (EntityManager em = JPAUtil.getEntityManager()) {
