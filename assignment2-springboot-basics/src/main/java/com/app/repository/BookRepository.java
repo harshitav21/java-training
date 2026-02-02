@@ -12,8 +12,8 @@ import com.app.entity.Book;
 
 @Repository
 public class BookRepository {
-    private Map<Integer, Book> store = new HashMap<>();
-    private AtomicInteger counter = new AtomicInteger(1);
+    private Map<Integer, Book> store = new HashMap<>();  //acting as db store
+    private AtomicInteger counter = new AtomicInteger(1); //automatic id generator
 
     public Book save(Book book) {
     	   if (book.getId() == null) {

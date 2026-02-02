@@ -26,27 +26,22 @@ public class BookController {
 
 	    @PostMapping
 	    public Book create(@RequestBody BookDto dto) {  //JSON object -> Java Object
-	        return service.addBook(dto);
+	        return service.saveBook(dto);
 	    }
 
 	    @GetMapping
 	    public List<Book> getAll() {
-	        return service.getAll();
+	        return service.getAllBooks();
 	    }
 
 	    @GetMapping("/{id}")
 	    public Book getById(@PathVariable Integer id) {
-	        return service.getById(id);
-	    }
-
-	    @PutMapping("/{id}")
-	    public Book update(@PathVariable Integer id, @RequestBody BookDto dto) {
-	        return service.update(id, dto);
+	        return service.getBookById(id);
 	    }
 
 	    @DeleteMapping("/{id}")
 	    public String delete(@PathVariable Integer id) {
-	        service.delete(id);
+	        service.deleteBookById(id);
 	        return "Deleted book with id " + id;
 	    }
 }
