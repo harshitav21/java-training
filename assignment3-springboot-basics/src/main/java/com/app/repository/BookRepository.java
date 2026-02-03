@@ -15,7 +15,7 @@ public interface BookRepository extends JpaRepository<Book, Integer> {
 //	findAll()
 //	deleteById(Integer id)
 //	existsById(Integer id)
-//	count()
+//	count()  --> provided by JpaRepository
 	List<Book> findByAuthor(String author);
 
 	List<Book> findByPriceLessThan(Double price);
@@ -26,12 +26,12 @@ public interface BookRepository extends JpaRepository<Book, Integer> {
 
 	void deleteByTitle(String title);
 
-	@Query("SELECT b FROM books b WHERE b.title LIKE %:keyword%")
+	@Query("SELECT b FROM Book b WHERE b.title LIKE %:keyword%")
 	List<Book> searchByTitle(String keyword);
 
-	@Query("SELECT b FROM books b ORDER BY b.price DESC")
+	@Query("SELECT b FROM Book b ORDER BY b.price DESC")
 	List<Book> sortByPriceDesc();
 
-	@Query(value = "SELECT * FROM books WHERE price BETWEEN ?1 AND ?2", nativeQuery = true)
+	@Query(value = "SELECT * FROM Book WHERE price BETWEEN ?1 AND ?2", nativeQuery = true)
 	List<Book> findByPriceRange(double min, double max);
 }

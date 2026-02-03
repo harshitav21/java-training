@@ -21,7 +21,7 @@ public class BookService {
     public Book saveBook(BookDto bookDto) {
 
         if (bookRepository.existsByIsbn(bookDto.getIsbn())) {
-            throw new DataAccessException("Book with ISBN already exists");
+            throw new DataAccessException("Book with ISBN already exists!");
         }
 
         Book book = mapDtoToEntity(bookDto);
