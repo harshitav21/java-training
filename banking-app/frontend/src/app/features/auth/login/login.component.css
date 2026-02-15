@@ -1,0 +1,60 @@
+.login-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* LEFT SIDE */
+.brand-panel {
+  flex: 1;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.brand-content h1 {
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.tagline {
+  font-size: 18px;
+  margin-bottom: 30px;
+  opacity: 0.9;
+}
+
+.features div {
+  margin-bottom: 10px;
+  font-size: 15px;
+  opacity: 0.95;
+}
+
+/* RIGHT SIDE */
+.form-panel {
+  flex: 1;
+  background-color: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-wrapper {
+  width: 400px;
+}
+
+.form-control {
+  border-radius: 10px;
+}
+
+.btn-primary {
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.alert {
+  border-radius: 10px;
+}

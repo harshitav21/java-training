@@ -1,0 +1,151 @@
+<div class="container-fluid py-4 px-4">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h2 class="mb-1">
+        {{ greeting }}, {{ username }} 👋
+      </h2>
+      <p class="text-muted">
+        View customer accounts and perform transactions
+      </p>
+    </div>
+    <button class="btn btn-outline-danger" (click)="logout()">
+      Logout
+    </button>
+
+  </div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="row g-4 mb-5">
+
+    <div class="col-md-4">
+      <div class="card stat-card border-0 shadow-sm rounded-4">
+        <div class="card-body py-4">
+          <p class="text-muted small mb-2">Accounts on This Page</p>
+          <h2 class="fw-bold mb-0">{{ accounts.length }}</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card stat-card border-0 shadow-sm rounded-4">
+        <div class="card-body py-4">
+          <p class="text-muted small mb-2">Current Page</p>
+          <h2 class="fw-bold mb-0">{{ currentPage + 1 }}</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card stat-card border-0 shadow-sm rounded-4">
+        <div class="card-body py-4">
+          <p class="text-muted small mb-2">Total Pages</p>
+          <h2 class="fw-bold mb-0">{{ totalPages }}</h2>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ACCOUNTS TABLE -->
+  <div class="card table-card border-0 shadow-sm rounded-4 p-4">
+
+    <div class="table-responsive">
+      <table class="table align-middle table-hover">
+
+        <thead class="table-light">
+          <tr>
+            <th class="text-muted small text-uppercase">Account Number</th>
+            <th class="text-muted small text-uppercase">Client Name</th>
+            <th class="text-muted small text-uppercase">Balance</th>
+            <th class="text-muted small text-uppercase">Status</th>
+            <th class="text-muted small text-uppercase text-end">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let account of accounts">
+
+            <!-- Account Number -->
+            <td class="fw-semibold">
+              {{ account.accountNumber }}
+            </td>
+
+            <!-- Client -->
+            <td>
+              {{ account.clientName }}
+            </td>
+
+            <!-- Balance -->
+            <td class="fw-semibold">
+              {{ account.balance | currency:'INR':'symbol':'1.2-2' }}
+            </td>
+
+            <!-- Status -->
+            <td>
+              <span class="badge rounded-pill px-3 py-2" [ngClass]="account.active ? 'bg-success' : 'bg-danger'">
+                {{ account.active ? 'ACTIVE' : 'INACTIVE' }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="text-end">
+              <div class="d-flex justify-content-end gap-2 flex-wrap">
+
+                <!-- View -->
+                <a [routerLink]="['/clerk/account', account.accountNumber]" class="btn btn-sm btn-outline-primary">
+                  View
+                </a>
+
+                <!-- Deposit -->
+                <a [routerLink]="['/clerk/deposit', account.accountNumber]" class="btn btn-sm btn-outline-success"
+                  [class.disabled]="!account.active" [attr.aria-disabled]="!account.active">
+                  Deposit
+                </a>
+
+                <!-- Withdraw -->
+                <a [routerLink]="account.active ? ['/clerk/withdraw', account.accountNumber] : null"
+                  class="btn btn-sm btn-outline-warning" [class.disabled]="!account.active"
+                  [attr.aria-disabled]="!account.active" [title]="!account.active ? 'Account is inactive' : ''">
+                  Withdraw
+                </a>
+
+              </div>
+            </td>
+
+          </tr>
+
+          <!-- No Data -->
+          <tr *ngIf="accounts.length === 0">
+            <td colspan="5" class="text-center text-muted py-4">
+              No accounts found.
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+
+      <button class="btn btn-outline-secondary px-4" (click)="previousPage()" [disabled]="currentPage === 0">
+        Previous
+      </button>
+
+      <span class="fw-semibold">
+        Page {{ currentPage + 1 }} of {{ totalPages }}
+      </span>
+
+      <button class="btn btn-outline-secondary px-4" (click)="nextPage()"
+        [disabled]="currentPage === totalPages - 1 || totalPages === 0">
+        Next
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

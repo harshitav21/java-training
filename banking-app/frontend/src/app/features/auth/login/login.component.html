@@ -1,0 +1,84 @@
+<div class="login-container">
+
+  <!-- Left Branding Panel -->
+  <div class="brand-panel">
+    <div class="brand-content">
+      <h1>Yamaha Bank</h1>
+      <p class="tagline">
+        Secure. Reliable. Trusted.
+      </p>
+
+      <div class="features">
+        <div>✔ Role-based access control</div>
+        <div>✔ Real-time account management</div>
+        <div>✔ Enterprise-grade security</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Login Panel -->
+  <div class="form-panel">
+
+    <div class="form-wrapper">
+
+      <h3 class="mb-3">Welcome Back 👋</h3>
+      <p class="text-muted mb-4">
+        Please login to continue
+      </p>
+
+      <form [formGroup]="loginForm" (ngSubmit)="login()">
+
+        <div class="mb-4">
+          <label class="form-label">Username</label>
+          <input
+            type="text"
+            class="form-control form-control-lg"
+            formControlName="username"
+          />
+
+          <div
+            *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+            class="text-danger small mt-1">
+            Username is required
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">Password</label>
+          <input
+            type="password"
+            class="form-control form-control-lg"
+            formControlName="password"
+          />
+
+          <div
+            *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+            class="text-danger small mt-1">
+            Password is required
+          </div>
+        </div>
+
+        <button
+          class="btn btn-primary btn-lg w-100"
+          type="submit"
+          [disabled]="loginForm.invalid || loading">
+
+          <span *ngIf="!loading">Login</span>
+          <span *ngIf="loading">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Signing in...
+          </span>
+
+        </button>
+
+      </form>
+
+      <div *ngIf="error" class="alert alert-danger mt-4">
+        {{ error }}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

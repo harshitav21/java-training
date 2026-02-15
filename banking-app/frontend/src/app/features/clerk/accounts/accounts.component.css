@@ -1,0 +1,31 @@
+.stat-card {
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  transition: 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+.table-card {
+  border-radius: 20px;
+}
+
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.status-badge.active {
+  background: #e6f4ea;
+  color: #198754;
+}
+
+.status-badge.inactive {
+  background: #fdeaea;
+  color: #dc3545;
+}

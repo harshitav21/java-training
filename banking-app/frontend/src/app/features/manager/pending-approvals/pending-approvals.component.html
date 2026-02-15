@@ -1,0 +1,66 @@
+<div class="container-fluid p-4">
+
+  <button class="btn btn-link mb-3" (click)="goBack()">
+    ← Back
+  </button>
+  <h3 class="mb-4">Pending Withdrawal Approvals</h3>
+
+  <div *ngIf="loading" class="text-center">
+    Loading...
+  </div>
+
+  <div class="card shadow-sm border-0" *ngIf="!loading">
+
+    <div class="card-body">
+
+
+
+      <table class="table table-hover align-middle">
+
+        <thead class="table-light">
+          <tr>
+            <th>Transaction Ref</th>
+            <th>Account Number</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let approval of approvals">
+
+            <td>{{ approval.transactionRef }}</td>
+            <td>{{ approval.accountNumber }}</td>
+            <td>₹ {{ approval.amount }}</td>
+            <td>{{ approval.createdAt | date:'short' }}</td>
+
+            <td class="text-center">
+
+              <button class="btn btn-sm btn-success me-2" (click)="approve(approval.transactionRef)">
+                Approve
+              </button>
+
+              <button class="btn btn-sm btn-danger" (click)="reject(approval.transactionRef)">
+                Reject
+              </button>
+
+            </td>
+
+          </tr>
+
+          <tr *ngIf="approvals.length === 0">
+            <td colspan="5" class="text-center text-muted">
+              No pending approvals
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>

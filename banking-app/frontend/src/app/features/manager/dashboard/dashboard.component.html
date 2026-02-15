@@ -1,0 +1,257 @@
+<div class="container-fluid py-4 px-4">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 dashboard-header">
+
+        <div>
+            <h2 class="fw-bold mb-1">
+                {{ greeting }}, {{ username }} 👋
+            </h2>
+            <small class="text-muted">
+                Overview of accounts and withdrawal approvals
+            </small>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <a routerLink="create-account" class="btn btn-success btn-sm px-4 shadow-sm">
+                + Create Account
+            </a>
+
+            <a routerLink="create-clerk" class="btn btn-primary btn-sm px-4 shadow-sm">
+                + Create Clerk
+            </a>
+
+            <a routerLink="approvals" class="btn btn-warning btn-sm px-4 text-dark shadow-sm">
+                View Approvals
+            </a>
+
+            <button class="btn btn-outline-danger btn-sm px-4" (click)="logout()">
+                Logout
+            </button>
+
+        </div>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="row g-4 mb-5">
+
+        <!-- TOTAL ACCOUNTS -->
+        <div class="col-md-4">
+            <div class="card stat-card border-0">
+                <div class="card-body py-4">
+                    <p class="text-muted small mb-2">Total Accounts</p>
+                    <h2 class="fw-bold mb-0">{{ totalElements }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVE ACCOUNTS -->
+        <div class="col-md-4">
+            <div class="card stat-card border-0">
+                <div class="card-body py-4">
+                    <p class="text-muted small mb-2">Active Accounts</p>
+                    <h2 class="fw-bold text-success mb-0">{{ activeCount }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- PENDING -->
+        <div class="col-md-4">
+            <div class="card stat-card border-0">
+                <div class="card-body py-4">
+                    <p class="text-muted small mb-2">Pending Withdrawals</p>
+                    <h2 class="fw-bold text-danger mb-0">{{ pendingCount }}</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row g-4 mb-5">
+
+        <div class="container mt-4">
+
+            <div class="card shadow-sm border-0 p-4 rounded-4 table-card">
+
+                <!-- Header + Search -->
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <h4 class="fw-bold mb-0">All Accounts</h4>
+
+                    <div style="width: 280px;">
+                        <input type="text"
+                               class="form-control search-input"
+                               placeholder="Search by Account No or Name..."
+                               [(ngModel)]="searchText" />
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-muted small text-uppercase">Account No</th>
+                                <th class="text-muted small text-uppercase">Account Holder</th>
+                                <th class="text-muted small text-uppercase">Balance</th>
+                                <th class="text-muted small text-uppercase">Status</th>
+                                <th class="text-muted small text-uppercase text-end">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr *ngFor="let account of filteredAccounts()">
+
+                                <td class="fw-semibold">
+                                    {{ account.accountNumber }}
+                                </td>
+
+                                <td>
+                                    {{ account.clientName }}
+                                </td>
+
+                                <td class="fw-semibold">
+                                    ₹{{ account.balance | number:'1.2-2' }}
+                                </td>
+
+                                <td>
+                                    <span class="status-badge"
+                                          [ngClass]="account.active ? 'active' : 'inactive'">
+                                        {{ account.active ? 'ACTIVE' : 'INACTIVE' }}
+                                    </span>
+                                </td>
+
+                                <!-- ACTIONS -->
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+
+                                        <button *ngIf="account.active"
+                                                class="btn btn-sm btn-outline-primary"
+                                                (click)="editAccount(account.accountNumber)">
+                                            Edit
+                                        </button>
+
+                                        <button *ngIf="account.active"
+                                                class="btn btn-sm btn-outline-danger"
+                                                (click)="deactivate(account.accountNumber)">
+                                            Deactivate
+                                        </button>
+
+                                        <span *ngIf="!account.active"
+                                              class="text-muted small fw-semibold">
+                                            Inactive
+                                        </span>
+
+                                    </div>
+                                </td>
+
+                            </tr>
+
+                            <tr *ngIf="filteredAccounts().length === 0">
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No accounts found.
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav *ngIf="totalPages > 1" class="mt-4">
+                    <ul class="pagination justify-content-end mb-0">
+
+                        <li class="page-item" [class.disabled]="currentPage === 0">
+                            <button class="page-link" (click)="prevPage()">
+                                Previous
+                            </button>
+                        </li>
+
+                        <li class="page-item"
+                            *ngFor="let page of pageNumbers"
+                            [class.active]="page === currentPage">
+                            <button class="page-link"
+                                    (click)="goToPage(page)">
+                                {{ page + 1 }}
+                            </button>
+                        </li>
+
+                        <li class="page-item"
+                            [class.disabled]="currentPage === totalPages - 1">
+                            <button class="page-link" (click)="nextPage()">
+                                Next
+                            </button>
+                        </li>
+
+                    </ul>
+                </nav>
+
+            </div>
+        </div>
+
+        <!-- Pending Withdrawals (UNCHANGED STRUCTURE, improved styling only) -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-semibold mb-0">Pending Withdrawals</h5>
+
+                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
+                        {{ transactions.length }} Pending
+                    </span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th class="py-3">Reference</th>
+                                <th>Account</th>
+                                <th>Amount</th>
+                                <th>Performed By</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr *ngFor="let txn of transactions">
+                                <td class="fw-semibold">{{ txn.transactionRef }}</td>
+                                <td>{{ txn.accountNumber }}</td>
+                                <td class="fw-semibold text-danger">
+                                    {{ txn.amount | currency:'INR':'symbol':'1.0-0' }}
+                                </td>
+                                <td>{{ txn.performedBy }}</td>
+
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-success me-2 px-3 shadow-sm"
+                                            (click)="approve(txn.transactionRef)">
+                                        Approve
+                                    </button>
+
+                                    <button class="btn btn-sm btn-outline-danger px-3"
+                                            (click)="reject(txn.transactionRef)">
+                                        Reject
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <tr *ngIf="transactions.length === 0">
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No pending withdrawals
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
