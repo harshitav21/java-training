@@ -2,9 +2,10 @@ package com.bank.application.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +19,11 @@ import com.bank.application.exception.UnauthorizedActionException;
 import com.bank.application.repository.AccountRepository;
 import com.bank.application.repository.UserRepository;
 
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Transactional
+@Slf4j
 public class AccountServiceImpl implements AccountService {
 
 	private final AccountRepository accountRepository;
@@ -34,9 +37,15 @@ public class AccountServiceImpl implements AccountService {
 	@Override
 	public AccountResponseDto createAccount(CreateAccountRequestDto request, Long managerId) {
 
-		User manager = userRepository.findById(managerId).orElseThrow(() -> new ResourceNotFoundException("Manager not found: " + managerId));
+		log.info("Account creation request initiated by managerId={}", managerId);
+
+		User manager = userRepository.findById(managerId).orElseThrow(() -> {
+			log.warn("Manager not found with id={}", managerId);
+			return new ResourceNotFoundException("Manager not found: " + managerId);
+		});
 
 		if (manager.getRole() != Role.MANAGER) {
+			log.warn("Unauthorized account creation attempt by userId={} with role={}", managerId, manager.getRole());
 			throw new UnauthorizedActionException("Only managers can create accounts.");
 		}
 
@@ -50,6 +59,9 @@ public class AccountServiceImpl implements AccountService {
 
 		Account savedAccount = accountRepository.save(account);
 
+		log.info("Account successfully created. accountNumber={}, createdBy={}", savedAccount.getAccountNumber(),
+				managerId);
+
 		return new AccountResponseDto(savedAccount.getAccountNumber(), savedAccount.getClientName(),
 				savedAccount.getBalance(), savedAccount.isActive(), savedAccount.getCreatedAt());
 	}
@@ -58,29 +70,44 @@ public class AccountServiceImpl implements AccountService {
 	@Transactional(readOnly = true)
 	public AccountResponseDto getAccountByNumber(String accountNumber) {
 
-		Account account = accountRepository.findByAccountNumberAndActiveTrue(accountNumber)
-				.orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountNumber));
+		log.debug("Fetching account details for accountNumber={}", accountNumber);
+
+		Account account = accountRepository.findByAccountNumberAndActiveTrue(accountNumber).orElseThrow(() -> {
+			log.warn("Account not found or inactive. accountNumber={}", accountNumber);
+			return new ResourceNotFoundException("Account not found: " + accountNumber);
+		});
 
 		return new AccountResponseDto(account.getAccountNumber(), account.getClientName(), account.getBalance(),
 				account.isActive(), account.getCreatedAt());
 	}
-	
-	@Override
-	public List<AccountResponseDto> getAllAccounts() {
-		List<Account> accounts = accountRepository.findAll(); // Fetch all accounts from DB
 
-		// Manually convert Account entity to AccountResponseDto
-		return accounts.stream().map(acc -> new AccountResponseDto(acc.getAccountNumber(), acc.getClientName(),
-				acc.getBalance(), acc.isActive(), acc.getCreatedAt())).collect(Collectors.toList());
+	@Override
+	@Transactional(readOnly = true)
+	public Page<AccountResponseDto> getAllAccounts(Pageable pageable) {
+
+		log.debug("Fetching all accounts. pageNumber={}, pageSize={}", pageable.getPageNumber(),
+				pageable.getPageSize());
+
+		Page<Account> accounts = accountRepository.findAll(pageable);
+
+		return accounts.map(account -> new AccountResponseDto(account.getAccountNumber(), account.getClientName(),
+				account.getBalance(), account.isActive(), account.getCreatedAt()));
 	}
-	
-//	.stream() → iterates over all accounts
-//
-//	.map(...) → converts each Account to AccountResponseDto
-//
-//	.collect(Collectors.toList()) → returns a List<AccountResponseDto>
+
+	@Override
+	@Transactional(readOnly = true)
+	public Page<AccountResponseDto> getAllActiveAccounts(Pageable pageable) {
+
+		log.debug("Fetching all active accounts. pageNumber={}, pageSize={}", pageable.getPageNumber(),
+				pageable.getPageSize());
+
+		Page<Account> accounts = accountRepository.findByActiveTrue(pageable);
+
+		return accounts.map(account -> new AccountResponseDto(account.getAccountNumber(), account.getClientName(),
+				account.getBalance(), account.isActive(), account.getCreatedAt()));
+	}
 
 	private String generateAccountNumber() {
-		return "ACC" + System.currentTimeMillis();
+		return "ACC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 	}
 }

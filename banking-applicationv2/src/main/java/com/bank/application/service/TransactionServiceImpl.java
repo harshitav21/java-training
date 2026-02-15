@@ -2,9 +2,12 @@ package com.bank.application.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +21,9 @@ import com.bank.application.entity.Transaction;
 import com.bank.application.entity.TransactionStatus;
 import com.bank.application.entity.TransactionType;
 import com.bank.application.entity.User;
+import com.bank.application.exception.InvalidTransactionException;
 import com.bank.application.exception.ResourceNotFoundException;
+import com.bank.application.exception.UnauthorizedActionException;
 import com.bank.application.mapper.TransactionMapper;
 import com.bank.application.repository.AccountRepository;
 import com.bank.application.repository.TransactionRepository;
@@ -28,26 +33,49 @@ import com.bank.application.repository.UserRepository;
 @Transactional
 public class TransactionServiceImpl implements TransactionService {
 
+	private static final Logger log = LogManager.getLogger(TransactionServiceImpl.class);
+
 	private final AccountRepository accountRepo;
 	private final TransactionRepository txnRepo;
 	private final UserRepository userRepo;
 	private final TransactionMapper transactionMapper;
 
-	public TransactionServiceImpl(AccountRepository accountRepo, TransactionRepository txnRepo,
-			UserRepository userRepo,  TransactionMapper transactionMapper) {
+	public TransactionServiceImpl(AccountRepository accountRepo, TransactionRepository txnRepo, UserRepository userRepo,
+			TransactionMapper transactionMapper) {
 		this.accountRepo = accountRepo;
 		this.txnRepo = txnRepo;
 		this.userRepo = userRepo;
 		this.transactionMapper = transactionMapper;
 	}
 
+	// ===========================
+	// DEPOSIT
+	// ===========================
 	@Override
 	public TransactionResponseDto deposit(DepositRequestDto request, Long clerkId) {
 
-		Account account = accountRepo.findByAccountNumberAndActiveTrue(request.getAccountNumber())
-				.orElseThrow(() -> new ResourceNotFoundException("Account not found: " + request.getAccountNumber()));
+		log.info("Deposit request received | Account: {} | ClerkId: {} | Amount: {}", request.getAccountNumber(),
+				clerkId, request.getAmount());
 
-		User clerk = userRepo.findById(clerkId).orElseThrow(() -> new ResourceNotFoundException("Clerk not found: " + clerkId));
+		Account account = accountRepo.findByAccountNumberAndActiveTrue(request.getAccountNumber()).orElseThrow(() -> {
+			log.error("Deposit failed - Account not found: {}", request.getAccountNumber());
+			return new ResourceNotFoundException("Account not found: " + request.getAccountNumber());
+		});
+
+		User clerk = userRepo.findById(clerkId).orElseThrow(() -> {
+			log.error("Deposit failed - Clerk not found: {}", clerkId);
+			return new ResourceNotFoundException("Clerk not found: " + clerkId);
+		});
+
+		if (clerk.getRole() != Role.CLERK) {
+			log.warn("Unauthorized deposit attempt by UserId: {}", clerkId);
+			throw new UnauthorizedActionException("Only clerks can perform transactions.");
+		}
+
+		if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+			log.warn("Invalid deposit amount for Account: {}", request.getAccountNumber());
+			throw new InvalidTransactionException("Deposit amount must be greater than zero.");
+		}
 
 		// Update balance
 		account.setBalance(account.getBalance().add(request.getAmount()));
@@ -64,19 +92,44 @@ public class TransactionServiceImpl implements TransactionService {
 
 		txnRepo.save(txn);
 
+		log.info("Deposit successful | Ref: {} | New Balance: {}", txn.getTransactionRef(), account.getBalance());
+
 		return transactionMapper.toResponse(txn);
 	}
 
+	// ===========================
+	// WITHDRAW
+	// ===========================
 	@Override
 	public TransactionResponseDto withdraw(WithdrawRequestDto request, Long clerkId) {
 
-		Account account = accountRepo.findByAccountNumberAndActiveTrue(request.getAccountNumber())
-				.orElseThrow(() ->new ResourceNotFoundException("Account not found: " + request.getAccountNumber()));
+		log.info("Withdrawal request received | Account: {} | ClerkId: {} | Amount: {}", request.getAccountNumber(),
+				clerkId, request.getAmount());
 
-		User clerk = userRepo.findById(clerkId).orElseThrow(() -> new ResourceNotFoundException("Clerk not found: " + clerkId));
+		Account account = accountRepo.findByAccountNumberAndActiveTrue(request.getAccountNumber()).orElseThrow(() -> {
+			log.error("Withdrawal failed - Account not found: {}", request.getAccountNumber());
+			return new ResourceNotFoundException("Account not found: " + request.getAccountNumber());
+		});
+
+		User clerk = userRepo.findById(clerkId).orElseThrow(() -> {
+			log.error("Withdrawal failed - Clerk not found: {}", clerkId);
+			return new ResourceNotFoundException("Clerk not found: " + clerkId);
+		});
+
+		if (clerk.getRole() != Role.CLERK) {
+			log.warn("Unauthorized withdrawal attempt by UserId: {}", clerkId);
+			throw new UnauthorizedActionException("Only clerks can perform transactions.");
+		}
+
+		if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+			log.warn("Invalid withdrawal amount for Account: {}", request.getAccountNumber());
+			throw new InvalidTransactionException("Withdrawal amount must be greater than zero.");
+		}
 
 		if (account.getBalance().compareTo(request.getAmount()) < 0) {
-			throw new RuntimeException("Insufficient balance");
+			log.warn("Insufficient balance | Account: {} | Available: {} | Requested: {}", request.getAccountNumber(),
+					account.getBalance(), request.getAmount());
+			throw new InvalidTransactionException("Insufficient balance.");
 		}
 
 		Transaction txn = new Transaction();
@@ -89,33 +142,53 @@ public class TransactionServiceImpl implements TransactionService {
 
 		if (request.getAmount().compareTo(BigDecimal.valueOf(200_000)) <= 0) {
 
-			// Direct withdrawal
 			account.setBalance(account.getBalance().subtract(request.getAmount()));
 			txn.setStatus(TransactionStatus.COMPLETED);
 
+			log.info("Withdrawal successful | Ref: {} | Remaining Balance: {}", txn.getTransactionRef(),
+					account.getBalance());
+
 		} else {
-			// Needs approval
+
 			txn.setStatus(TransactionStatus.PENDING_APPROVAL);
+
+			log.info("Withdrawal requires approval | Ref: {} | Amount: {}", txn.getTransactionRef(),
+					request.getAmount());
 		}
 
 		txnRepo.save(txn);
 		return transactionMapper.toResponse(txn);
 	}
 
+	// ===========================
+	// TRANSACTION HISTORY
+	// ===========================
 	@Override
-	@Transactional(readOnly = true)
-	public List<TransactionHistoryResponseDto> getTransactionHistory(String accountNumber, Long requesterId) {
+	public Page<TransactionHistoryResponseDto> getTransactionHistory(String accountNumber, Long requesterId,
+			Pageable pageable) {
 
-		User requester = userRepo.findById(requesterId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+		log.info("Transaction history requested | Account: {} | RequestedBy: {}", accountNumber, requesterId);
 
-		List<Transaction> transactions = txnRepo.findByAccount_AccountNumber(accountNumber);
+		User requester = userRepo.findById(requesterId).orElseThrow(() -> {
+			log.error("History request failed - User not found: {}", requesterId);
+			return new ResourceNotFoundException("User not found");
+		});
 
-		// Simple role check (v1)
-		if (requester.getRole() == Role.CLERK) {
-			// optional: restrict further later
+		if (requester.getRole() != Role.MANAGER && requester.getRole() != Role.CLERK) {
+			log.warn("Unauthorized history access attempt by UserId: {}", requesterId);
+			throw new UnauthorizedActionException("You are not authorized to view transaction history");
 		}
 
-		return transactions.stream().map(transactionMapper::toHistory).toList();
-	}
+		Account account = accountRepo.findByAccountNumberAndActiveTrue(accountNumber).orElseThrow(() -> {
+			log.error("History request failed - Account not found: {}", accountNumber);
+			return new ResourceNotFoundException("Account not found");
+		});
 
+		Page<Transaction> transactions = txnRepo.findByAccount_AccountNumber(accountNumber, pageable);
+
+		log.info("Transaction history fetched successfully | Account: {} | Records: {}", accountNumber,
+				transactions.getTotalElements());
+
+		return transactions.map(transactionMapper::toHistory);
+	}
 }
